@@ -416,6 +416,8 @@ class JSOCClient(BaseClient):
         for block in jsoc_response.query_args:
 
             ds = self._make_recordset(**block)
+            i = ds.index('{')
+            ds = ds[0:i] + '[? QUALITY >= 0 ?]' + ds[i:]
             cd = drms.Client(email=block.get('notify', ''))
             protocol = block.get('protocol', 'fits')
 
