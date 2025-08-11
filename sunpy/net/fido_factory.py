@@ -162,6 +162,10 @@ class UnifiedResponse(Sequence):
         """
         return self._numfile
 
+    @property
+    def errors(self):
+        return [res.errors for res in self._list if res.errors]
+
     def _repr_html_(self):
         nprov = len(self)
         if nprov == 1:
@@ -191,6 +195,8 @@ class UnifiedResponse(Sequence):
             size = block.total_size()
             if np.isfinite(size):
                 ret += f'Total estimated size: {size}\n'
+            if block.errors:
+                ret += f'Errors: {block.errors}\n'
             ret += '\n'
             lines = repr(block).split('\n')
             ret += '\n'.join(lines[1:])
@@ -479,7 +485,12 @@ class UnifiedDownloaderFactory(BasicRegistrationFactory):
         results = []
         for client in candidate_widget_types:
             tmpclient = client()
-            results.append(tmpclient.search(*query))
+            try:
+                res = tmpclient.search(*query)
+            except Exception as err:
+                res = QueryResponseTable([], client=tmpclient, error=err)
+
+            results.append(res)
 
         # This method is called by `search` and the results are fed into a
         # UnifiedResponse object.
